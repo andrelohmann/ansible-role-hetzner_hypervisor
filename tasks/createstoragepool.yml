@@ -1,0 +1,34 @@
+---
+
+- name: create iamges directory
+  file:
+    path: "{{ hetzner_hypervisor_vms_path }}"
+    state: directory
+    mode: 0755
+
+- name: create iamges directory
+  file:
+    path: /etc/libvirt/storage/autostart
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: check existence of storage pool
+  stat:
+    path: "/etc/libvirt/storage/{{ hetzner_hypervisor_default_storage_pool }}.xml"
+  register: storage_pool_exists
+
+- name: create storage pool
+  command: "virsh pool-define-as --name {{ hetzner_hypervisor_default_storage_pool }} --type dir --target {{ hetzner_hypervisor_vms_path }}"
+  when: storage_pool_exists.stat.exists == False
+
+- name: set storage pool to autostart
+  command: "virsh pool-autostart {{ hetzner_hypervisor_default_storage_pool }}"
+  when: storage_pool_exists.stat.exists == False
+
+- name: start storage pool
+  command: "virsh pool-start {{ hetzner_hypervisor_default_storage_pool }}"
+  when: storage_pool_exists.stat.exists == False
+
+...

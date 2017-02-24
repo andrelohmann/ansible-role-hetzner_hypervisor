@@ -1,0 +1,38 @@
+# Loopback device:
+auto lo
+iface lo inet loopback
+
+# device: eth0
+auto  eth0
+iface eth0 inet static
+  address   {{ ansible_host }}
+  netmask   255.255.255.255
+  gateway   {{ hetzner_hypervisor_gateway }}
+  pointopoint {{ hetzner_hypervisor_gateway }}
+
+iface eth0 inet6 static
+  address {{ hetzner_hypervisor_ipv6_address }}
+  netmask {{ hetzner_hypervisor_ipv6_netmask }}
+  gateway {{ hetzner_hypervisor_ipv6_gateway }}
+
+auto  br0
+iface br0 inet manual
+  address {{ ansible_host }} # Our Host will be the Gateway for all VM's
+  netmask 255.255.255.255
+  bridge_ports none
+  bridge_stp off
+  bridge_fd 0
+  bridge_maxwait 0
+{% for vm in hetzner_hypervisor_vms %}
+  up route add -host {{ vm.ip }} dev br0
+{% endfor %}
+
+#{% for vm in hetzner_hypervisor_vms %}
+#auto tap{{ loop.index }}
+#iface tap{{ loop.index }} inet manual
+#  pre-up tunctl -t tap{{ loop.index }}
+#  up ifconfig tap{{ loop.index }} up
+#  down ifconfig tap{{ loop.index }} down
+#  pre-up brctl addif br0 tap{{ loop.index }}
+#
+#{% endfor %}

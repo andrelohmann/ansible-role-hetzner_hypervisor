@@ -1,0 +1,161 @@
+---
+
+- name: copy partition to /tmp/partition
+  copy:
+    src: partition
+    dest: /tmp/partition
+
+- name: activate NetworkBlockDevice
+  modprobe:
+    name: nbd
+    state: present
+    params: 'max_part=16'
+
+- name: check existence of qcow2 image
+  stat:
+    path: "{{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
+  register: qcow_exists
+
+- block:
+  - name: create qcow2 file if not exists
+    command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }} --format qcow2"
+
+  - name: connect the qcow device
+    command: "qemu-nbd -c /dev/nbd0 {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
+
+  # just create one full partition
+  - name: partition the qcow device
+    shell: sfdisk /dev/nbd0 -uS < /tmp/partition
+    args:
+      executable: /bin/bash
+
+  - name: set ext
+    filesystem:
+      fstype: ext4
+      dev: /dev/nbd0p1
+
+  - name: mount qcow2
+    command: mount /dev/nbd0p1 /mnt/
+
+  - name: debootstrap
+    command: "debootstrap --include=less,locales-all,vim,nano,sudo,resolvconf,ssh,linux-image-amd64,grub-pc {{ hetzner_hypervisor_guest_debian_version }} /mnt"
+
+  - name: bind mount pseudo filesystems
+    shell: "mkdir /mnt/{{ item }}; mount --bind /{{ item }} /mnt/{{ item }} warn=no"
+    register: _pseudomount
+    with_items:
+    - proc
+    - sys
+    - dev
+    - dev/pts
+
+  - name: update sources
+    command: "chroot /mnt apt-get update"
+
+  - name: get Device UUID
+    command: blkid -o value /dev/nbd0p1
+    register: _device_uuid
+
+  - name: set UUID
+    set_fact:
+      device_uuid: "{{ _device_uuid.stdout_lines[0] }}"
+
+  - name: add fstab
+    template:
+      src: fstab.j2
+      dest: /mnt/etc/fstab
+      owner: root
+      group: root
+      mode: '0644'
+      backup: yes
+
+  - name: add interfaces
+    template:
+      src: guest_interfaces.j2
+      dest: /mnt/etc/network/interfaces
+      owner: root
+      group: root
+      mode: '0644'
+      backup: yes
+
+  - name: set hostname
+    copy:
+      content: "{{ vm.name }}"
+      dest: /mnt/etc/hostname
+
+  - name: create /root/.ssh directory
+    file:
+      state: directory
+      path: /mnt/root/.ssh
+
+  - name: copy root key
+    copy:
+      src: /root/.ssh/authorized_keys
+      dest: /mnt/root/.ssh/authorized_keys
+      owner: root
+      group: root
+      mode: 0600
+      remote_src: True
+
+  - name: delete supplied keys
+    file:
+      state: absent
+      dest: "/mnt/etc/ssh/ssh_host_{{ item.algo }}_key"
+    with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
+
+  - name: delete supplied pub keys
+    file:
+      state: absent
+      dest: "/mnt/etc/ssh/ssh_host_{{ item.algo }}_key.pub"
+    with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
+
+  - name: generate (better) ssh host keys
+    command: >
+      chroot /mnt ssh-keygen -q -N '' -t {{ item.algo }} -b {{ item.keylen }}
+      -f /etc/ssh/ssh_host_{{ item.algo }}_key
+    with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
+
+  - name: set up grub
+    command: chroot /mnt update-grub
+
+  - name: install boot loader (grub)
+    command: chroot /mnt grub-install /dev/nbd0
+
+  - name: replace /dev/nbd0p1 with /dev/vda1
+    replace:
+      dest: /mnt/boot/grub/grub.cfg
+      regexp: '/dev/nbd0p1'
+      replace: '/dev/vda1'
+
+  - name: umount pseudo filesystems
+    command: umount /mnt/{{ item }}
+    with_items:
+    - dev/pts
+    - proc
+    - sys
+    - dev
+
+  - name: unmount qcow
+    command: umount /dev/nbd0p1
+
+  - name: unconnect the qcow device
+    command: "qemu-nbd -d /dev/nbd0"
+
+  - name: creaete vm
+    command: virt-install -n {{ vm.name }}
+             --memory={{ vm.ram }}
+             --vcpus={{ vm.cores }}
+             --cpu host
+             --os-type=linux
+             --disk vol={{ hetzner_hypervisor_default_storage_pool }}/{{ vm.name }}.qcow2,device=disk,bus=virtio
+             --network bridge=br0,model=virtio,mac={{ vm.mac }}
+             --import
+             --noautoconsole
+             --autostart
+             --graphics vnc,keymap=de
+
+  # Block condition
+  when: qcow_exists.stat.exists == False
+# Block end
+
+...

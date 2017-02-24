@@ -1,0 +1,68 @@
+---
+
+- name: apt-get update
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: install packages
+  apt: name={{item}} state=installed
+  with_items:
+  - qemu-kvm
+  - bridge-utils
+  - uml-utilities
+  - debootstrap
+  - libvirt-bin
+  - virtinst
+
+- name: activate ipv4 forwarding
+  lineinfile:
+    dest: /etc/sysctl.conf
+    regexp: "^net.ipv4.ip_forward"
+    line: "net.ipv4.ip_forward=1"
+    state: present
+
+- name: activate ipv4 redirects
+  lineinfile:
+    dest: /etc/sysctl.conf
+    regexp: "^net.ipv4.conf.eth0.send_redirects"
+    line: "net.ipv4.conf.eth0.send_redirects=0"
+    state: present
+
+- name: activate ipv6 forwarding
+  lineinfile:
+    dest: /etc/sysctl.conf
+    regexp: "^net.ipv6.conf.all.forwarding"
+    line: "net.ipv6.conf.all.forwarding=1"
+    state: present
+
+- name: edit interfaces
+  template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  notify: restart networking
+
+- name: flush handler
+  meta: flush_handlers
+
+- name: create storage pool
+  include: createstoragepool.yml
+
+- name: create vms
+  include: createvm.yml
+  with_items: "{{ hetzner_hypervisor_vms }}"
+  loop_control:
+    loop_var: vm
+
+- name: add users to libvirtd group
+  user:
+    name: '{{ item }}'
+    groups: libvirtd
+    append: yes
+  with_items: "{{ hetzner_hypervisor_libvirt_members }}"
+
+...

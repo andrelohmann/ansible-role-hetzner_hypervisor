@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  author: andrelohmann
+  description: ansible galaxy to create a libvirt hypervisor and kvm VMs on a plain debian installed hetzner pizzabox
+  company: smartformer UG
+
+  license: MIT
+
+  min_ansible_version: 2.2
+
+  platforms:
+    - name: Debian
+      versions:
+      - jessie
+      - stretch
+
+  galaxy_tags:
+  - hetzner
+  - hypervisor
+  - libvirt
+
+dependencies: []
+...

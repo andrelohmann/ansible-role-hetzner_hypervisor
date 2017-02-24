@@ -1,0 +1,13 @@
+---
+hetzner_hypervisor_vms_path: /var/lib/libvirt/images/
+hetzner_hypervisor_default_storage_pool: Default
+hetzner_hypervisor_libvirt_members: []
+hetzner_hypervisor_ssh_host_keys:
+- algo: 'ed25519'
+  keylen: '1337'
+- algo: 'ecdsa'
+  keylen: '521'
+- algo: 'rsa'
+  keylen: '4096'
+hetzner_hypervisor_guest_debian_version: jessie
+...

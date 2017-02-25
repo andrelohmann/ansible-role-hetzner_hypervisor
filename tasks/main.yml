@@ -12,6 +12,7 @@
   - bridge-utils
   - uml-utilities
   - debootstrap
+  - eatmydata
   - libvirt-bin
   - virtinst
 

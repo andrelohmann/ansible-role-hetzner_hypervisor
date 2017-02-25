@@ -1,10 +1,5 @@
 ---
 
-- name: copy partition to /tmp/partition
-  copy:
-    src: partition
-    dest: /tmp/partition
-
 - name: activate NetworkBlockDevice
   modprobe:
     name: nbd
@@ -23,22 +18,38 @@
   - name: connect the qcow device
     command: "qemu-nbd -c /dev/nbd0 {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
 
-  # just create one full partition
-  - name: partition the qcow device
-    shell: sfdisk /dev/nbd0 -uS < /tmp/partition
-    args:
-      executable: /bin/bash
+  - name: Create BIOS Boot partition (for grub)
+    command: sgdisk -n 1:0:+1M -t 1:ef02 /dev/nbd0
 
-  - name: set ext
+  - name: Create boot partition
+    command: sgdisk -n 2:0:+1024M -t 2:8200 /dev/nbd0
+
+  - name: Create root partition
+    command: sgdisk -n 3:0:0 -t 3:8200 /dev/nbd0
+
+  - name: format boot partition
     filesystem:
       fstype: ext4
-      dev: /dev/nbd0p1
+      dev: /dev/nbd0p2
 
-  - name: mount qcow2
-    command: mount /dev/nbd0p1 /mnt/
+  - name: format root partition
+    filesystem:
+      fstype: ext4
+      dev: /dev/nbd0p3
+
+  - name: mount root partition
+    command: mount /dev/nbd0p3 /mnt/
+
+  - name: create /mnt/boot directory
+    file:
+      state: directory
+      path: /mnt/boot
+
+  - name: mount boot partition
+    command: mount /dev/nbd0p2 /mnt/boot/
 
   - name: debootstrap
-    command: "debootstrap --include=less,locales-all,vim,nano,sudo,resolvconf,ssh,linux-image-amd64,grub-pc {{ hetzner_hypervisor_guest_debian_version }} /mnt"
+    command: "eatmydata debootstrap --include=less,locales-all,vim,nano,sudo,resolvconf,ssh,linux-image-amd64,grub-pc {{ hetzner_hypervisor_guest_debian_version }} /mnt"
 
   - name: bind mount pseudo filesystems
     shell: "mkdir /mnt/{{ item }}; mount --bind /{{ item }} /mnt/{{ item }} warn=no"
@@ -52,13 +63,21 @@
   - name: update sources
     command: "chroot /mnt apt-get update"
 
-  - name: get Device UUID
-    command: blkid -o value /dev/nbd0p1
+  - name: get boot Device UUID
+    command: blkid -o value /dev/nbd0p2
     register: _device_uuid
 
-  - name: set UUID
+  - name: set boot UUID
     set_fact:
-      device_uuid: "{{ _device_uuid.stdout_lines[0] }}"
+      boot_device_uuid: "{{ _device_uuid.stdout_lines[0] }}"
+
+  - name: get root Device UUID
+    command: blkid -o value /dev/nbd0p2
+    register: _device_uuid
+
+  - name: set root UUID
+    set_fact:
+      root_device_uuid: "{{ _device_uuid.stdout_lines[0] }}"
 
   - name: add fstab
     template:
@@ -135,8 +154,11 @@
     - sys
     - dev
 
-  - name: unmount qcow
-    command: umount /dev/nbd0p1
+  - name: unmount boot
+    command: umount /dev/nbd0p2
+
+  - name: unmount root
+    command: umount /dev/nbd0p3
 
   - name: unconnect the qcow device
     command: "qemu-nbd -d /dev/nbd0"

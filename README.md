@@ -26,24 +26,24 @@ The following mandatory variables need to be set in group_vars/host_vars
     hetzner_hypervisor_vms_path: __PATH_TO_YOUR_QCOW2_IMAGES__
     # available network: e.g. 10.10.10.64 - 10.10.10.71
     hetzner_hypervisor_vms:
-    - name: 10.10.10.64
-      ip: __YOUR_VM_NAME__
+    - name: __YOUR_VM_NAME__
+      ip: 10.10.10.64
       size: 10G
       ram: 4096
       cores: 2
-      mac: 10:10:00:00:00:01
-    - name: 10.10.10.65
-      ip: __YOUR_VM_NAME__
+      mac: "10:10:00:00:00:01"
+    - name: __YOUR_VM_NAME__
+      ip: 10.10.10.65
       size: 10G
       ram: 4096
       cores: 2
-      mac: 10:10:00:00:00:02
-    - name: 10.10.10.66
-      ip: __YOUR_VM_NAME__
+      mac: "10:10:00:00:00:02"
+    - name: __YOUR_VM_NAME__
+      ip: 10.10.10.66
       size: 10G
       ram: 4096
       cores: 2
-      mac: 10:10:00:00:00:03
+      mac: "10:10:00:00:00:03"
 
 Example Playbook
 ----------------

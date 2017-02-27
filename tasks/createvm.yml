@@ -50,9 +50,11 @@
 
   - name: debootstrap
     command: "eatmydata debootstrap --include=less,locales-all,vim,nano,sudo,resolvconf,ssh,linux-image-amd64,grub-pc {{ hetzner_hypervisor_guest_debian_version }} /mnt"
+    async: 86400
+    poll: 30
 
   - name: bind mount pseudo filesystems
-    shell: "mkdir /mnt/{{ item }}; mount --bind /{{ item }} /mnt/{{ item }} warn=no"
+    shell: "mount --bind /{{ item }} /mnt/{{ item }}"
     register: _pseudomount
     with_items:
     - proc

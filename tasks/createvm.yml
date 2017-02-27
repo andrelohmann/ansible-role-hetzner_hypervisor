@@ -24,7 +24,7 @@
       _bootstrap_target: "{{ _mktemp.stdout }}"
 
   - name: mount tmpfs
-    command: "mount -t tmpfs -o size=2G none {{ _bootstrap_target }} warn=no"
+    command: "mount -t tmpfs -o size=2G none {{ _bootstrap_target }}"
 
   - name: debootstrap
     command: "eatmydata debootstrap {{ hetzner_hypervisor_guest_debian_version }} {{ _bootstrap_target }}"
@@ -32,7 +32,7 @@
     poll: 15
 
   - name: bind mount pseudo filesystems
-    shell: "mkdir -p {{ _bootstrap_target }}/{{ item }}; mount --bind /{{ item }} {{ _bootstrap_target }}/{{ item }} warn=no"
+    shell: "mkdir -p {{ _bootstrap_target }}/{{ item }}; mount --bind /{{ item }} {{ _bootstrap_target }}/{{ item }}"
     register: _pseudomount
     with_items:
     - proc

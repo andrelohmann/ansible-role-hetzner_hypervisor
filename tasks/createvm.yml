@@ -15,6 +15,53 @@
   - name: create qcow2 file if not exists
     command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }} --format qcow2"
 
+  - name: create another tmpdir
+    command: mktemp -d
+    register: _mktemp
+
+  - name: set target (tmpfs)
+    set_fact:
+      _bootstrap_target: "{{ _mktemp.stdout }}"
+
+  - name: mount tmpfs
+    command: "mount -t tmpfs -o size=2G none {{ _bootstrap_target }} warn=no"
+
+  - name: debootstrap
+    command: "eatmydata debootstrap {{ hetzner_hypervisor_guest_debian_version }} {{ _bootstrap_target }}"
+    async: 86400
+    poll: 15
+
+  - name: bind mount pseudo filesystems
+    shell: "mkdir -p {{ _bootstrap_target }}/{{ item }}; mount --bind /{{ item }} {{ _bootstrap_target }}/{{ item }} warn=no"
+    register: _pseudomount
+    with_items:
+    - proc
+    - sys
+    - dev
+    - dev/pts
+
+  - name: update sources
+    command: "chroot {{ _bootstrap_target }} apt-get update"
+
+  - name: install eatmydata
+    command: "chroot {{ _bootstrap_target }} apt-get -y install eatmydata"
+
+  - name: install packages
+    command: "chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc"
+    async: 86400
+    poll: 15
+
+  - name: clean up packages
+    command: "chroot {{ _bootstrap_target }} eatmydata apt-get clean"
+
+  - name: umount pseudo filesystems
+    command: umount {{ _bootstrap_target }}/{{ item }}
+    with_items:
+    - dev/pts
+    - proc
+    - sys
+    - dev
+
   - name: connect the qcow device
     command: "qemu-nbd -c /dev/nbd0 {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
 
@@ -48,22 +95,24 @@
   - name: mount boot partition
     command: mount /dev/nbd0p2 /mnt/boot/
 
-  - name: debootstrap
-    command: "eatmydata debootstrap --include=less,locales-all,vim,nano,sudo,resolvconf,ssh,linux-image-amd64,grub-pc {{ hetzner_hypervisor_guest_debian_version }} /mnt"
-    async: 86400
-    poll: 30
+  - name: copy data from temp
+    shell: cp -a {{ _bootstrap_target }}/* /mnt/
 
   - name: bind mount pseudo filesystems
-    shell: "mount --bind /{{ item }} /mnt/{{ item }}"
-    register: _pseudomount
+    shell: mkdir -p /mnt/{{ item }}; mount --bind /{{ item }} /mnt/{{ item }}
     with_items:
     - proc
     - sys
     - dev
     - dev/pts
 
-  - name: update sources
-    command: "chroot /mnt apt-get update"
+  - name: umount tmpfs
+    command: "umount {{ _bootstrap_target }}"
+
+  - name: remove tmpfs
+    file:
+      state: absent
+      dest: "{{ _bootstrap_target }}"
 
   - name: get boot Device UUID
     command: blkid -o value /dev/nbd0p2

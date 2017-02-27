@@ -62,7 +62,7 @@
 - name: add users to libvirtd group
   user:
     name: '{{ item }}'
-    groups: libvirtd
+    groups: libvirt
     append: yes
   with_items: "{{ hetzner_hypervisor_libvirt_members }}"
 

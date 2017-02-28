@@ -18,9 +18,6 @@ Role Variables
 The following mandatory variables need to be set in group_vars/host_vars
 
     hetzner_hypervisor_gateway: __YOUR_HYPERVISORS_MAIN_IP_GATEWAY_ADDRESS__
-    hetzner_hypervisor_ipv6_address: __YOUR_HYPERVISORS_MAIN_IP6_ADDRESS__
-    hetzner_hypervisor_ipv6_netmask: 64
-    hetzner_hypervisor_ipv6_gateway: __YOUR_HYPERVISORS_MAIN_IP6_GATEWAY_ADDRESS__
     hetzner_hypervisor_libvirt_members:
     - __YOUR_MEMBER__
     hetzner_hypervisor_vms_path: __PATH_TO_YOUR_QCOW2_IMAGES__

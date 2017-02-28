@@ -41,13 +41,13 @@
     - dev/pts
 
   - name: update sources
-    command: "chroot {{ _bootstrap_target }} apt-get update"
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} apt-get update"
 
   - name: install eatmydata
-    command: "chroot {{ _bootstrap_target }} apt-get -y install eatmydata"
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} apt-get -y install eatmydata"
 
   - name: install packages
-    command: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc"
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc"
     async: 86400
     poll: 15
 

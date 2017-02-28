@@ -10,11 +10,6 @@ iface eth0 inet static
   gateway   {{ hetzner_hypervisor_gateway }}
   pointopoint {{ hetzner_hypervisor_gateway }}
 
-iface eth0 inet6 static
-  address {{ hetzner_hypervisor_ipv6_address }}
-  netmask {{ hetzner_hypervisor_ipv6_netmask }}
-  gateway {{ hetzner_hypervisor_ipv6_gateway }}
-
 auto  br0
 iface br0 inet manual
   address {{ ansible_host }} # Our Host will be the Gateway for all VM's

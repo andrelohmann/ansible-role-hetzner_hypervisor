@@ -30,12 +30,12 @@
     line: "net.ipv4.conf.eth0.send_redirects=0"
     state: present
 
-- name: activate ipv6 forwarding
-  lineinfile:
-    dest: /etc/sysctl.conf
-    regexp: "^net.ipv6.conf.all.forwarding"
-    line: "net.ipv6.conf.all.forwarding=1"
-    state: present
+#- name: activate ipv6 forwarding
+#  lineinfile:
+#    dest: /etc/sysctl.conf
+#    regexp: "^net.ipv6.conf.all.forwarding"
+#    line: "net.ipv6.conf.all.forwarding=1"
+#    state: present
 
 - name: edit interfaces
   template:

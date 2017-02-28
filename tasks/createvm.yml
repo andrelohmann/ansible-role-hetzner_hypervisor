@@ -47,7 +47,7 @@
     command: "chroot {{ _bootstrap_target }} apt-get -y install eatmydata"
 
   - name: install packages
-    command: "chroot {{ _bootstrap_target }} DEBIAN_FRONTEND=noninteractive eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc"
+    command: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc"
     async: 86400
     poll: 15
 

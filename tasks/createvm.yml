@@ -13,7 +13,7 @@
 
 - block:
   - name: create qcow2 file if not exists
-    command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }} --format qcow2"
+    command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }} --allocation {{ vm.size }} --format qcow2"
 
   - name: create another tmpdir
     command: mktemp -d

@@ -37,6 +37,9 @@
 #    line: "net.ipv6.conf.all.forwarding=1"
 #    state: present
 
+- name: activate forwarding
+  command: sysctl -p
+
 - name: edit interfaces
   template:
     src: interfaces.j2

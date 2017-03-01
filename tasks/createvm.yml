@@ -194,8 +194,8 @@
   - name: replace /dev/nbd0p1 with /dev/vda1
     replace:
       dest: /mnt/boot/grub/grub.cfg
-      regexp: '/dev/nbd0p1'
-      replace: '/dev/vda1'
+      regexp: 'nbd0p3'
+      replace: 'vda3'
 
   - name: umount pseudo filesystems
     command: umount /mnt/{{ item }}

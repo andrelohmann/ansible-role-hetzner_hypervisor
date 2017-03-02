@@ -9,6 +9,8 @@
 - name: check existence of qcow2 image
   stat:
     path: "{{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
+    get_md5: false
+    get_checksum: false
   register: qcow_exists
 
 - block:
@@ -47,7 +49,7 @@
     shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} apt-get -y install eatmydata"
 
   - name: install packages
-    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc python"
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc python xfsprogs"
     async: 86400
     poll: 15
 
@@ -81,7 +83,7 @@
 
   - name: format root partition
     filesystem:
-      fstype: ext4
+      fstype: xfs
       dev: /dev/nbd0p3
 
   - name: mount root partition
@@ -117,6 +119,7 @@
   - name: get boot Device UUID
     shell: "blkid -s UUID -o value /dev/nbd0p2"
     register: _device_uuid
+    changed_when: True
 
   - name: set boot UUID
     set_fact:
@@ -125,6 +128,7 @@
   - name: get root Device UUID
     shell: "blkid -s UUID -o value /dev/nbd0p3"
     register: _device_uuid
+    changed_when: True
 
   - name: set root UUID
     set_fact:
@@ -137,7 +141,6 @@
       owner: root
       group: root
       mode: '0644'
-      backup: yes
 
   - name: add interfaces
     template:
@@ -146,7 +149,14 @@
       owner: root
       group: root
       mode: '0644'
-      backup: yes
+
+  - name: add sources.list
+    copy:
+      src: sources.list
+      dest: /mnt/etc/apt/sources.list
+      owner: root
+      group: root
+      mode: '0644'
 
   - name: set hostname
     copy:
@@ -244,7 +254,7 @@
              --vcpus={{ vm.cores }}
              --cpu host
              --os-type=linux
-             --disk vol={{ hetzner_hypervisor_default_storage_pool }}/{{ vm.name }}.qcow2,device=disk,bus=virtio,cache=writeback,sparse=no
+             --disk vol={{ hetzner_hypervisor_default_storage_pool }}/{{ vm.name }}.qcow2,device=disk,bus=virtio,cache=writeback,sparse=no,io=native,format=qcow2
              --network bridge=br0,model=virtio,mac={{ vm.mac }}
              --import
              --noautoconsole

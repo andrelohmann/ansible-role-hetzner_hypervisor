@@ -13,7 +13,7 @@
 
 - block:
   - name: create qcow2 file if not exists
-    command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }} --allocation {{ vm.size }} --format qcow2"
+    command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }} --prealloc-metadata --format qcow2"
 
   - name: create another tmpdir
     command: mktemp -d
@@ -47,7 +47,7 @@
     shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} apt-get -y install eatmydata"
 
   - name: install packages
-    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc"
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc python"
     async: 86400
     poll: 15
 
@@ -167,6 +167,30 @@
       mode: 0600
       remote_src: True
 
+  - name: copy .bash_aliases
+    copy:
+      src: bash_aliases
+      dest: /mnt/root/.bash_aliases
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: copy .bashrc
+    copy:
+      src: bashrc
+      dest: /mnt/root/.bashrc
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: copy .profile
+    copy:
+      src: profile
+      dest: /mnt/root/.profile
+      owner: root
+      group: root
+      mode: 0644
+
   - name: delete supplied keys
     file:
       state: absent
@@ -220,7 +244,7 @@
              --vcpus={{ vm.cores }}
              --cpu host
              --os-type=linux
-             --disk vol={{ hetzner_hypervisor_default_storage_pool }}/{{ vm.name }}.qcow2,device=disk,bus=virtio
+             --disk vol={{ hetzner_hypervisor_default_storage_pool }}/{{ vm.name }}.qcow2,device=disk,bus=virtio,cache=writeback,sparse=no
              --network bridge=br0,model=virtio,mac={{ vm.mac }}
              --import
              --noautoconsole

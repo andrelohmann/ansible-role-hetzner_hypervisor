@@ -254,7 +254,7 @@
              --vcpus={{ vm.cores }}
              --cpu host
              --os-type=linux
-             --disk vol={{ hetzner_hypervisor_default_storage_pool }}/{{ vm.name }}.qcow2,device=disk,bus=virtio,cache=writeback,sparse=no,io=native,format=qcow2
+             --disk vol={{ hetzner_hypervisor_default_storage_pool }}/{{ vm.name }}.qcow2,device=disk,bus=virtio,cache=writeback,format=qcow2
              --network bridge=br0,model=virtio,mac={{ vm.mac }}
              --import
              --noautoconsole

@@ -115,20 +115,12 @@
       dest: "{{ _bootstrap_target }}"
 
   - name: get boot Device UUID
-    command: blkid -o value /dev/nbd0p2
-    register: _device_uuid
-
-  - name: set boot UUID
-    set_fact:
-      boot_device_uuid: "{{ _device_uuid.stdout_lines[0] }}"
+    command: "blkid -s UUID -o value /dev/nbd0p2"
+    register: boot_device_uuid
 
   - name: get root Device UUID
-    command: blkid -o value /dev/nbd0p2
-    register: _device_uuid
-
-  - name: set root UUID
-    set_fact:
-      root_device_uuid: "{{ _device_uuid.stdout_lines[0] }}"
+    command: "blkid -s UUID -o value /dev/nbd0p3"
+    register: root_device_uuid
 
   - name: add fstab
     template:

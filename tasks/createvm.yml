@@ -115,7 +115,7 @@
       dest: "{{ _bootstrap_target }}"
 
   - name: get boot Device UUID
-    command: "blkid -s UUID -o value /dev/nbd0p2"
+    shell: "blkid -s UUID -o value /dev/nbd0p2"
     register: _device_uuid
 
   - name: set boot UUID
@@ -123,7 +123,7 @@
       boot_device_uuid: "{{ _device_uuid.stdout }}"
 
   - name: get root Device UUID
-    command: "blkid -s UUID -o value /dev/nbd0p3"
+    shell: "blkid -s UUID -o value /dev/nbd0p3"
     register: _device_uuid
 
   - name: set root UUID

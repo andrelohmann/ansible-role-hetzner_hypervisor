@@ -17,7 +17,7 @@
 - name: install packages
   apt: name={{item}} state=installed
   with_items: "{{ _package_list }}"
-  when: !hetzner_hypervisor_install_from_backports
+  when: not hetzner_hypervisor_install_from_backports
 
 - name: activate ipv4 forwarding
   lineinfile:

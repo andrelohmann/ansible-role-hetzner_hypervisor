@@ -1,4 +1,5 @@
 ---
+hetzner_hypervisor_install_from_backports: True
 hetzner_hypervisor_vms_path: /var/lib/libvirt/images/
 hetzner_hypervisor_default_storage_pool: Default
 hetzner_hypervisor_libvirt_members: []

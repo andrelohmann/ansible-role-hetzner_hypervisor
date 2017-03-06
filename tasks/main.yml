@@ -1,20 +1,23 @@
 ---
 
+- name: set package list
+  set_fact:
+    _package_list: "[ 'qemu-kvm', 'bridge-utils', 'uml-utilities', 'debootstrap', 'eatmydata', 'libvirt-bin', 'virtinst']"
+
 - name: apt-get update
   apt:
     update_cache: yes
     cache_valid_time: 3600
 
 - name: install packages
+  apt: name={{item}} state=installed  default_release={{ ansible_distribution_release }}-backports dpkg_options='force-confnew,force-confdef'
+  with_items: "{{ _package_list }}"
+  when: hetzner_hypervisor_install_from_backports
+
+- name: install packages
   apt: name={{item}} state=installed
-  with_items:
-  - qemu-kvm
-  - bridge-utils
-  - uml-utilities
-  - debootstrap
-  - eatmydata
-  - libvirt-bin
-  - virtinst
+  with_items: "{{ _package_list }}"
+  when: !hetzner_hypervisor_install_from_backports
 
 - name: activate ipv4 forwarding
   lineinfile:

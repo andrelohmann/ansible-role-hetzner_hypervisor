@@ -34,7 +34,7 @@
     poll: 15
 
   - name: bind mount pseudo filesystems
-    shell: "mkdir -p {{ _bootstrap_target }}/{{ item }}; mount --bind /{{ item }} {{ _bootstrap_target }}/{{ item }}"
+    shell: "mkdir -p {{ _bootstrap_target }}/{{ item }}; mount -o bind /{{ item }} {{ _bootstrap_target }}/{{ item }}"
     register: _pseudomount
     with_items:
     - proc
@@ -60,9 +60,9 @@
     command: umount {{ _bootstrap_target }}/{{ item }}
     with_items:
     - dev/pts
+    - dev
     - proc
     - sys
-    - dev
 
   - name: connect the qcow device
     command: "qemu-nbd -c /dev/nbd0 {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
@@ -101,7 +101,7 @@
     shell: cp -a {{ _bootstrap_target }}/* /mnt/
 
   - name: bind mount pseudo filesystems
-    shell: mkdir -p /mnt/{{ item }}; mount --bind /{{ item }} /mnt/{{ item }}
+    shell: mkdir -p /mnt/{{ item }}; mount -o bind /{{ item }} /mnt/{{ item }}
     with_items:
     - proc
     - sys
@@ -219,11 +219,11 @@
       -f /etc/ssh/ssh_host_{{ item.algo }}_key
     with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
 
-  - name: set up grub
-    command: chroot /mnt update-grub
-
   - name: install boot loader (grub)
     command: chroot /mnt grub-install /dev/nbd0
+
+  - name: set up grub
+    command: chroot /mnt update-grub
 
   - name: replace /dev/nbd0p1 with /dev/vda1
     replace:
@@ -232,12 +232,12 @@
       replace: 'vda3'
 
   - name: umount pseudo filesystems
-    command: umount /mnt/{{ item }}
+    command: umount -l /mnt/{{ item }}
     with_items:
     - dev/pts
+    - dev
     - proc
     - sys
-    - dev
 
   - name: unmount boot
     command: umount /dev/nbd0p2

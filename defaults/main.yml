@@ -10,5 +10,6 @@ hetzner_hypervisor_ssh_host_keys:
   keylen: '521'
 - algo: 'rsa'
   keylen: '4096'
-hetzner_hypervisor_guest_debian_version: jessie
+hetzner_hypervisor_debootstrap_debian_url: 'http://ftp.debian.org/debian/'
+hetzner_hypervisor_debootstrap_ubuntu_url: 'http://archive.ubuntu.com/ubuntu/'
 ...

@@ -28,8 +28,18 @@
   - name: mount tmpfs
     command: "mount -t tmpfs -o size=2G none {{ _bootstrap_target }}"
 
+  - name: set debian distro url
+    set_fact:
+      _distro_url: "{{ hetzner_hypervisor_debootstrap_debian_url }}"
+    when: vm.distro == 'debian'
+
+  - name: set ubuntu distro url
+    set_fact:
+      _distro_url: "{{ hetzner_hypervisor_debootstrap_ubuntu_url }}"
+    when: vm.distro == 'ubuntu'
+
   - name: debootstrap
-    command: "eatmydata debootstrap {{ hetzner_hypervisor_guest_debian_version }} {{ _bootstrap_target }}"
+    command: "eatmydata debootstrap {{ vm.release }} {{ _bootstrap_target }} {{ _distro_url }}"
     async: 86400
     poll: 15
 
@@ -48,10 +58,26 @@
   - name: install eatmydata
     shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} apt-get -y install eatmydata"
 
-  - name: install packages
-    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less locales-all vim nano sudo resolvconf ssh linux-image-amd64 grub-pc python xfsprogs"
+  - name: install generic packages
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install less vim nano sudo resolvconf ssh grub-pc python xfsprogs"
     async: 86400
     poll: 15
+
+  - name: install debian packages
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install locales-all linux-image-amd64"
+    async: 86400
+    poll: 15
+    when: vm.distro == 'debian'
+
+  - name: install ubuntu packages
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install linux-image-virtual"
+    async: 86400
+    poll: 15
+    when: vm.distro == 'ubuntu'
+
+  - name: generate locales
+    command: "chroot {{ _bootstrap_target }} locale-gen"
+    when: vm.distro == 'ubuntu'
 
   - name: clean up packages
     command: "chroot {{ _bootstrap_target }} eatmydata apt-get clean"

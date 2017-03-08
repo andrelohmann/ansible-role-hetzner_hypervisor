@@ -30,18 +30,24 @@ The following mandatory variables need to be set in group_vars/host_vars
       ram: 4096
       cores: 2
       mac: "10:10:00:00:00:01"
+      distro: debian/ubuntu
+      release: jessie/stretch/trusty/xenial
     - name: __YOUR_VM_NAME__
       ip: 10.10.10.65
       size: 10G
       ram: 4096
       cores: 2
       mac: "10:10:00:00:00:02"
+      distro: debian/ubuntu
+      release: jessie/stretch/trusty/xenial
     - name: __YOUR_VM_NAME__
       ip: 10.10.10.66
       size: 10G
       ram: 4096
       cores: 2
       mac: "10:10:00:00:00:03"
+      distro: debian/ubuntu
+      release: jessie/stretch/trusty/xenial
 
 Example Playbook
 ----------------

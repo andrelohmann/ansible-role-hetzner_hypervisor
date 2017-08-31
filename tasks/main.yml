@@ -10,12 +10,18 @@
     cache_valid_time: 3600
 
 - name: install packages from backports
-  apt: name={{item}} state=installed  default_release={{ ansible_distribution_release }}-backports dpkg_options='force-confnew,force-confdef'
+  apt:
+    name: "{{item}}"
+    state: installed
+    default_release: "{{ ansible_distribution_release }}-backports"
+    dpkg_options: 'force-confnew,force-confdef'
   with_items: "{{ _package_list }}"
   when: hetzner_hypervisor_install_from_backports
 
 - name: install packages
-  apt: name={{item}} state=installed
+  apt:
+    name: "{{item}}"
+    state: installed
   with_items: "{{ _package_list }}"
   when: not hetzner_hypervisor_install_from_backports
 

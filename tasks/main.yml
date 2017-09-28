@@ -71,11 +71,20 @@
   loop_control:
     loop_var: vm
 
-- name: add users to libvirtd group
+- name: add users to libvirt group
   user:
     name: '{{ item }}'
     groups: libvirt
     append: yes
   with_items: "{{ hetzner_hypervisor_libvirt_members }}"
+  when: ansible_distribution == 'Debian'
+
+- name: add users to libvirtd group
+  user:
+    name: '{{ item }}'
+    groups: libvirtd
+    append: yes
+  with_items: "{{ hetzner_hypervisor_libvirt_members }}"
+  when: ansible_distribution == 'Ubuntu'
 
 ...

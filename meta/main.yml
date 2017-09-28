@@ -11,11 +11,9 @@ galaxy_info:
   platforms:
     - name: Debian
       versions:
-      - jessie
       - stretch
     - name: Ubuntu
       versions:
-      - trusty
       - xenial
 
   galaxy_tags:

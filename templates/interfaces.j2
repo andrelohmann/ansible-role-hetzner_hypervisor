@@ -2,9 +2,9 @@
 auto lo
 iface lo inet loopback
 
-# device: eth0
-auto  eth0
-iface eth0 inet static
+# device: {{ ansible_default_ipv4.interface }}
+auto  {{ ansible_default_ipv4.interface }}
+iface {{ ansible_default_ipv4.interface }} inet static
   address   {{ ansible_host }}
   netmask   255.255.255.255
   gateway   {{ hetzner_hypervisor_gateway }}

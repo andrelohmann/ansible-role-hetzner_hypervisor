@@ -1,0 +1,11 @@
+#
+
+deb http://mirror.hetzner.de/debian/packages {{ vm.release }} main contrib non-free
+deb http://mirror.hetzner.de/debian/security {{ vm.release }}/updates main contrib non-free
+deb http://mirror.hetzner.de/debian/packages {{ vm.release }}-updates main contrib non-free
+
+deb http://ftp.de.debian.org/debian/ {{ vm.release }} main non-free contrib
+deb http://security.debian.org/debian-security {{ vm.release }}/updates main contrib non-free
+
+# {{ vm.release }}-updates, previously known as 'volatile'
+deb http://ftp.de.debian.org/debian/ {{ vm.release }}-updates main contrib non-free

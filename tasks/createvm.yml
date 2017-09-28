@@ -82,8 +82,23 @@
   - name: clean up packages
     command: "chroot {{ _bootstrap_target }} eatmydata apt-get clean"
 
+#  - name: copy root password to tmpfile
+#    copy:
+#      content: "root:{{ vm.rootpw }}"
+#      dest: "{{ _bootstrap_target }}/tmppw"
+
+#  - name: set root password
+#    shell: "chroot {{ _bootstrap_target }} chpasswd < {{ _bootstrap_target }}/tmppw"
+#    args:
+#      executable: /bin/bash
+
+#  - name: delete tmpfile
+#    file:
+#      dest: "{{ _bootstrap_target }}/tmppw"
+#      state: absent
+
   - name: umount pseudo filesystems
-    command: umount {{ _bootstrap_target }}/{{ item }}
+    command: umount -l {{ _bootstrap_target }}/{{ item }}
     with_items:
     - dev/pts
     - dev
@@ -135,7 +150,7 @@
     - dev/pts
 
   - name: umount tmpfs
-    command: "umount {{ _bootstrap_target }}"
+    command: "umount -l {{ _bootstrap_target }}"
 
   - name: remove tmpfs
     file:
@@ -176,13 +191,23 @@
       group: root
       mode: '0644'
 
-  - name: add sources.list
-    copy:
-      src: sources.list
+  - name: add debian_sources.list
+    template:
+      src: debian_sources.list.j2
       dest: /mnt/etc/apt/sources.list
       owner: root
       group: root
       mode: '0644'
+    when: vm.distro == 'debian'
+
+  - name: add ubuntu_sources.list
+    template:
+      src: ubuntu_sources.list.j2
+      dest: /mnt/etc/apt/sources.list
+      owner: root
+      group: root
+      mode: '0644'
+    when: vm.distro == 'ubuntu'
 
   - name: set hostname
     copy:
@@ -240,10 +265,23 @@
     with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
 
   - name: generate (better) ssh host keys
-    command: >
-      chroot /mnt ssh-keygen -q -N '' -t {{ item.algo }} -b {{ item.keylen }}
-      -f /etc/ssh/ssh_host_{{ item.algo }}_key
+    command: "chroot /mnt ssh-keygen -q -N '' -t {{ item.algo }} -b {{ item.keylen }} -f /etc/ssh/ssh_host_{{ item.algo }}_key"
     with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
+
+  - name: keep old eth0 device name
+    lineinfile:
+      dest: /mnt/etc/default/grub
+      regexp: "^GRUB_CMDLINE_LINUX"
+      line: 'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"'
+      state: present
+    when: ansible_distribution_release == 'stretch' or ansible_distribution_release == 'xenial'
+
+#  - name: keep old eth0 device name
+#    replace:
+#      dest: /mnt/etc/default/grub
+#      regexp: 'GRUB_CMDLINE_LINUX=""'
+#      replace: 'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"'
+#    when: ansible_distribution_release == 'stretch' or ansible_distribution_release == 'xenial'
 
   - name: install boot loader (grub)
     command: chroot /mnt grub-install /dev/nbd0
@@ -286,6 +324,7 @@
              --noautoconsole
              --autostart
              --graphics vnc,keymap=de
+             --console pty,target_type=virtio
 
   # Block condition
   when: qcow_exists.stat.exists == False

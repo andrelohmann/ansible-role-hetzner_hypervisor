@@ -56,7 +56,7 @@ Including an example of how to use your role (for instance, with variables passe
 
     - hosts: hypervisor
       roles:
-         - { role: andrelohmann.ansible-role-hetzner_hypervisor }
+         - { role: andrelohmann.hetzner_hypervisor }
 
 License
 -------

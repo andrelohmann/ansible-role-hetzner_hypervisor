@@ -17,7 +17,6 @@ Role Variables
 
 The following mandatory variables need to be set in group_vars/host_vars
 
-    hetzner_hypervisor_install_from_backports: True
     hetzner_hypervisor_gateway: __YOUR_HYPERVISORS_MAIN_IP_GATEWAY_ADDRESS__
     hetzner_hypervisor_libvirt_members:
     - __YOUR_MEMBER__

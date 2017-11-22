@@ -1,0 +1,11 @@
+---
+
+- name:
+  include: createvm.yml
+  when: ((vm.state is defined and vm.state == 'present') or vm.state is not defined)
+
+- name:
+  include: deletevm.yml
+  when: (vm.state is defined and vm.state == 'absent')
+
+...

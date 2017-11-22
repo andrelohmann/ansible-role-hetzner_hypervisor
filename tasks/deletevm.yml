@@ -1,0 +1,21 @@
+---
+
+- name: check existence of qcow2 image
+  stat:
+    path: "{{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
+    get_md5: false
+    get_checksum: false
+  register: qcow_exists
+
+- block:
+  - name: shut down machine
+    command: "virsh shutdown {{ vm.name }}"
+  # https://www.cyberciti.biz/faq/howto-linux-delete-a-running-vm-guest-on-kvm/
+  - name: delete volume if exists
+    command: "virsh vol-delete {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2"
+
+  # Block condition
+  when: qcow_exists.stat.exists == False
+# Block end
+
+...

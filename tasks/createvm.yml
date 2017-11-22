@@ -1,11 +1,5 @@
 ---
 
-- name: activate NetworkBlockDevice
-  modprobe:
-    name: nbd
-    state: present
-    params: 'max_part=16'
-
 - name: check existence of qcow2 image
   stat:
     path: "{{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"

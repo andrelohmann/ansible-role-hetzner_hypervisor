@@ -19,15 +19,7 @@ iface br0 inet manual
   bridge_fd 0
   bridge_maxwait 0
 {% for vm in hetzner_hypervisor_vms %}
+{% if (vm.state is defined and vm.state == 'present') or vm.state is not defined %}
   up route add -host {{ vm.ip }} dev br0
+{% endif %}
 {% endfor %}
-
-#{% for vm in hetzner_hypervisor_vms %}
-#auto tap{{ loop.index }}
-#iface tap{{ loop.index }} inet manual
-#  pre-up tunctl -t tap{{ loop.index }}
-#  up ifconfig tap{{ loop.index }} up
-#  down ifconfig tap{{ loop.index }} down
-#  pre-up brctl addif br0 tap{{ loop.index }}
-#
-#{% endfor %}

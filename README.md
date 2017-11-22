@@ -25,28 +25,31 @@ The following mandatory variables need to be set in group_vars/host_vars
     hetzner_hypervisor_vms:
     - name: __YOUR_VM_NAME__
       ip: 10.10.10.64
-      size: 10G
-      ram: 4096
+      size: 10 # size in GB
+      ram: 4096 # size in MB
       cores: 2
       mac: "10:10:00:00:00:01"
       distro: debian/ubuntu
       release: jessie/stretch/trusty/xenial
+      state: present/absent
     - name: __YOUR_VM_NAME__
       ip: 10.10.10.65
-      size: 10G
+      size: 10
       ram: 4096
       cores: 2
       mac: "10:10:00:00:00:02"
       distro: debian/ubuntu
       release: jessie/stretch/trusty/xenial
+      distro: debian/ubuntu
     - name: __YOUR_VM_NAME__
       ip: 10.10.10.66
-      size: 10G
+      size: 10
       ram: 4096
       cores: 2
       mac: "10:10:00:00:00:03"
       distro: debian/ubuntu
       release: jessie/stretch/trusty/xenial
+      distro: debian/ubuntu
 
 Example Playbook
 ----------------

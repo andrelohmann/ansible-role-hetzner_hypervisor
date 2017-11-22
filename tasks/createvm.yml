@@ -7,9 +7,10 @@
     get_checksum: false
   register: qcow_exists
 
+# create vm
 - block:
   - name: create qcow2 file if not exists
-    command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }} --prealloc-metadata --format qcow2"
+    command: "virsh vol-create-as {{ hetzner_hypervisor_default_storage_pool }} {{ vm.name }}.qcow2 {{ vm.size }}G --prealloc-metadata --format qcow2"
 
   - name: create another tmpdir
     command: mktemp -d
@@ -58,13 +59,13 @@
     poll: 15
 
   - name: install debian packages
-    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install locales-all linux-image-amd64"
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install locales-all linux-image-amd64 acpid"
     async: 86400
     poll: 15
     when: vm.distro == 'debian'
 
   - name: install ubuntu packages
-    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install linux-image-virtual"
+    shell: "DEBIAN_FRONTEND=noninteractive chroot {{ _bootstrap_target }} eatmydata apt-get -y install linux-image-virtual acpid"
     async: 86400
     poll: 15
     when: vm.distro == 'ubuntu'
@@ -320,8 +321,125 @@
              --graphics vnc,keymap=de
              --console pty,target_type=virtio
 
+  - name: add route
+    command: "route add -host {{ vm.ip }} dev br0"
+
   # Block condition
   when: qcow_exists.stat.exists == False
 # Block end
 
+# resize ram and/or cores
+- block:
+
+  # Read the memory content
+  - name: Read memory value
+    xml:
+      path: "/etc/libvirt/qemu/{{ vm.name }}.xml"
+      xpath: /domain/memory
+      content: text
+    register: _memory
+
+  # Read the core content
+  - name: Read vcpu value
+    xml:
+      path: "/etc/libvirt/qemu/{{ vm.name }}.xml"
+      xpath: /domain/vcpu
+      content: text
+    register: _vcpu
+
+  - name: register _vmupdate
+    set_fact:
+      _vmupdate: True
+    when: _memory.matches[0].memory|int != (vm.ram * 1024) or _vcpu.matches[0].vcpu|int != vm.cores
+
+  - block:
+    - name: stop vm
+      command: "virsh shutdown {{ vm.name }}"
+
+    - name: update max memory
+      xml:
+        path: "/etc/libvirt/qemu/{{ vm.name }}.xml"
+        xpath: /domain/memory
+        value: "{{ vm.ram * 1024 }}"
+
+    - name: update memory
+      xml:
+        path: "/etc/libvirt/qemu/{{ vm.name }}.xml"
+        xpath: /domain/currentMemory
+        value: "{{ vm.ram * 1024 }}"
+
+    - name: update vcpu
+      xml:
+        path: "/etc/libvirt/qemu/{{ vm.name }}.xml"
+        xpath: /domain/vcpu
+        value: "{{ vm.cores }}"
+
+    - name: define vm
+      command: "virsh define /etc/libvirt/qemu/{{ vm.name }}.xml"
+
+    - name: start vm
+      command: "virsh start {{ vm.name }}"
+
+    when: _vmupdate is defined and _vmupdate == True
+
+  # resize disk
+  - name: read current disk size
+    shell: "qemu-img info /var/lib/libvirt/images/{{ vm.name }}.qcow2 | grep virtual | cut -d ' ' -f 3-3 | cut -d '.' -f 1-1"
+    args:
+      executable: /bin/bash
+    register: _size
+
+  - block:
+
+    - name: fail when the new size is smaller than the old size
+      fail:
+        msg: "The new size for {{ vm.name }} ({{ vm.size }}G) is smaller than the current size ({{ _size.stdout }}G). You can not downscale the disksize. You can only upscale the disk size!"
+      when: _size.stdout|int > vm.size
+
+    - name: additional disk space
+      set_fact:
+        _size_diff: "{{ vm.size - _size.stdout|int }}"
+
+    - name: stop vm
+      command: "virsh shutdown {{ vm.name }}"
+
+    - name: resize disk
+      command: "qemu-img resize {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2 +{{ _size_diff }}G"
+
+    - name: connect the qcow device
+      command: "qemu-nbd -c /dev/nbd0 {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
+
+    - name: Fix qcow2 disk
+      command: sgdisk -e /dev/nbd0
+
+    - name:
+      shell: "parted /dev/nbd0 --script print free | grep 'Disk /dev/nbd0' | cut -d ' ' -f 3-3"
+      args:
+        executable: /bin/bash
+      register: _resize
+
+    - name: resize the partition
+      command: "parted /dev/nbd0 --script resizepart 3 {{ _resize.stdout }}"
+
+    - name: mount xfs
+      command: mount /dev/nbd0p3 /mnt/
+
+    - name: grow xfs
+      command: xfs_growfs /mnt/
+
+    - name: unmount xfs
+      command: umount /mnt
+
+    - name: disconnect
+      command: qemu-nbd --disconnect /dev/nbd0
+
+    - name: start vm
+      command: "virsh start {{ vm.name }}"
+
+    when: _size.stdout|int != vm.size
+
+
+  # Block condition
+  when: qcow_exists.stat.exists == True
+# Block end
 ...

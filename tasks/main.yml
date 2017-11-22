@@ -7,12 +7,12 @@
 
 - name: set package list debian
   set_fact:
-    _package_list: "[ 'qemu-kvm', 'bridge-utils', 'uml-utilities', 'debootstrap', 'libvirt-daemon-system', 'libvirt-clients', 'eatmydata', 'virtinst']"
+    _package_list: "[ 'python-lxml', 'qemu-kvm', 'bridge-utils', 'uml-utilities', 'debootstrap', 'libvirt-daemon-system', 'libvirt-clients', 'eatmydata', 'virtinst']"
   when: ansible_distribution == 'Debian'
 
 - name: set package list ubuntu
   set_fact:
-    _package_list: "[ 'qemu-kvm', 'bridge-utils', 'uml-utilities', 'debootstrap', 'eatmydata', 'libvirt-bin', 'virtinst']"
+    _package_list: "[ 'python-lxml', 'qemu-kvm', 'bridge-utils', 'uml-utilities', 'debootstrap', 'eatmydata', 'libvirt-bin', 'virtinst']"
   when: ansible_distribution == 'Ubuntu'
 
 - name: apt-get update

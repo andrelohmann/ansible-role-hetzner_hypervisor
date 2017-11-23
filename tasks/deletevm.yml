@@ -21,8 +21,13 @@
   - name: delete volume if exists
     command: "virsh vol-delete {{ vm.name }}.qcow2 {{ hetzner_hypervisor_default_storage_pool }}"
 
+  - name: route exists?
+    command: "ip route show {{ vm.ip }}"
+    register: _route_exists
+
   - name: delete route
-    command: "route del -host {{ vm.ip }} dev br0 2>/dev/null"
+    command: "route del -host {{ vm.ip }} dev br0"
+    when: _route_exists.stdout =! ""
 
   # Block condition
   when: qcow_exists.stat.exists == True

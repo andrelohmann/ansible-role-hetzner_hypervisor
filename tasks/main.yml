@@ -15,21 +15,20 @@
     _package_list: "[ 'python-lxml', 'qemu-kvm', 'bridge-utils', 'uml-utilities', 'debootstrap', 'eatmydata', 'libvirt-bin', 'virtinst']"
   when: ansible_distribution == 'Ubuntu'
 
-- name: apt-get update
-  apt:
-    update_cache: yes
-    cache_valid_time: 3600
-
 - name: install packages
   apt:
     name: "{{item}}"
-    state: installed
+    state: latest
     dpkg_options: 'force-confnew,force-confdef'
+    autoclean: yes
+    autoremove: yes
+    update_cache: yes
+    cache_valid_time: 3600
   with_items: "{{ _package_list }}"
 
 - name: activate ipv4 forwarding
   lineinfile:
-    dest: /etc/sysctl.conf
+    path: /etc/sysctl.conf
     regexp: "^net.ipv4.ip_forward"
     line: "net.ipv4.ip_forward=1"
     state: present
@@ -37,7 +36,7 @@
 
 - name: activate ipv4 redirects ubuntu
   lineinfile:
-    dest: /etc/sysctl.conf
+    path: /etc/sysctl.conf
     regexp: "^net.ipv4.conf.{{ ansible_default_ipv4.interface }}.send_redirects"
     line: "net.ipv4.conf.{{ ansible_default_ipv4.interface }}.send_redirects=0"
     state: present

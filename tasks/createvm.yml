@@ -135,7 +135,7 @@
   - name: remove tmpfs
     file:
       state: absent
-      dest: "{{ _bootstrap_target }}"
+      path: "{{ _bootstrap_target }}"
 
   - name: get boot Device UUID
     shell: "blkid -s UUID -o value /dev/nbd0p2"
@@ -235,13 +235,13 @@
   - name: delete supplied keys
     file:
       state: absent
-      dest: "/mnt/etc/ssh/ssh_host_{{ item.algo }}_key"
+      path: "/mnt/etc/ssh/ssh_host_{{ item.algo }}_key"
     with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
 
   - name: delete supplied pub keys
     file:
       state: absent
-      dest: "/mnt/etc/ssh/ssh_host_{{ item.algo }}_key.pub"
+      path: "/mnt/etc/ssh/ssh_host_{{ item.algo }}_key.pub"
     with_items: "{{ hetzner_hypervisor_ssh_host_keys }}"
 
   - name: generate (better) ssh host keys
@@ -250,7 +250,7 @@
 
   - name: keep old eth0 device name
     lineinfile:
-      dest: /mnt/etc/default/grub
+      path: /mnt/etc/default/grub
       regexp: "^GRUB_CMDLINE_LINUX"
       line: 'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"'
       state: present
@@ -264,7 +264,7 @@
 
   - name: replace /dev/nbd0p1 with /dev/vda1
     replace:
-      dest: /mnt/boot/grub/grub.cfg
+      path: /mnt/boot/grub/grub.cfg
       regexp: 'nbd0p3'
       replace: 'vda3'
 
@@ -349,7 +349,7 @@
 
   # Block start vm update
   - block:
-    
+
     - name: stop vm
       command: "virsh shutdown {{ vm.name }}"
 

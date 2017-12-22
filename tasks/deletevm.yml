@@ -27,7 +27,7 @@
 
   - name: delete route
     command: "route del -host {{ vm.ip }} dev br0"
-    when: _route_exists.stdout =! ""
+    when: _route_exists.stdout != ""
 
   # Block condition
   when: qcow_exists.stat.exists == True

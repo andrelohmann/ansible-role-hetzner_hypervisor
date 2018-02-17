@@ -332,24 +332,24 @@
 
   # Read the disk size
   - name: read current disk size
-    shell: "qemu-img info /var/lib/libvirt/images/{{ vm.name }}.qcow2 | grep virtual | cut -d ' ' -f 3-3 | cut -d 'G' -f 1-1"
+    shell: "qemu-img info /var/lib/libvirt/images/{{ vm.name }}.qcow2 | grep virtual | cut -d ' ' -f 4-4 | cut -d '(' -f 2-2"
     args:
       executable: /bin/bash
     register: _tmp_size
 
   - name: set _size
     set_fact:
-      _size: _tmp_size.stdout|int
+      _size: "{{ _tmp_size.stdout|int / (1024 * 1024 * 1024)}}"
 
   - name: fail when the new size is smaller than the old size
     fail:
       msg: "The new size for {{ vm.name }} ({{ vm.size }}G) is smaller than the current size ({{ _size }}G). You can not downscale the disksize. You can only upscale the disk size!"
-    when: _size > vm.size
+    when: _size|int > vm.size
 
   - name: register _vmupdate
     set_fact:
       _vmupdate: True
-    when: _memory.matches[0].memory|int != (vm.ram * 1024) or _vcpu.matches[0].vcpu|int != vm.cores or _size < vm.size
+    when: _memory.matches[0].memory|int != (vm.ram * 1024) or _vcpu.matches[0].vcpu|int != vm.cores or _size|int < vm.size
 
   # Block start vm update
   - block:
@@ -399,10 +399,10 @@
 
       - name: additional disk space
         set_fact:
-          _size_diff: "{{ vm.size - _size }}"
+          _size_diff: "{{ vm.size - _size|int }}"
 
       - name: resize disk
-        command: "qemu-img resize {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2 +{{ _size_diff }}G"
+        command: "qemu-img resize {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2 +{{ _size_diff }}B"
 
       - name: connect the qcow device
         command: "qemu-nbd -c /dev/nbd0 {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"
@@ -432,7 +432,7 @@
         command: qemu-nbd --disconnect /dev/nbd0
 
       # Block condition resize disk
-      when: _size < vm.size
+      when: _size|int < vm.size
     # Block end resize disk
 
     - name: start vm

@@ -402,7 +402,7 @@
           _size_diff: "{{ vm.size - _size|int }}"
 
       - name: resize disk
-        command: "qemu-img resize {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2 +{{ _size_diff }}B"
+        command: "qemu-img resize {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2 +{{ _size_diff }}G"
 
       - name: connect the qcow device
         command: "qemu-nbd -c /dev/nbd0 {{ hetzner_hypervisor_vms_path }}{{ vm.name }}.qcow2"

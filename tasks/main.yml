@@ -17,14 +17,13 @@
 
 - name: install packages
   apt:
-    name: "{{item}}"
+    name: "{{ _package_list }}"
     state: latest
     dpkg_options: 'force-confnew,force-confdef'
     autoclean: yes
     autoremove: yes
     update_cache: yes
     cache_valid_time: 3600
-  with_items: "{{ _package_list }}"
 
 - name: activate ipv4 forwarding
   lineinfile:

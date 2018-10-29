@@ -22,7 +22,8 @@
 
   - name: mount tmpfs
     command: "mount -t tmpfs -o size=2G none {{ _bootstrap_target }}"
-    warn: False
+    args:
+      warn: False
 
   - name: set debian distro url
     set_fact:
@@ -41,8 +42,9 @@
 
   - name: bind mount pseudo filesystems
     shell: "mkdir -p {{ _bootstrap_target }}/{{ item }}; mount -o bind /{{ item }} {{ _bootstrap_target }}/{{ item }}"
+    args:
+      warn: False
     register: _pseudomount
-    warn: False
     with_items:
     - proc
     - sys
